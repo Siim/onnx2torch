@@ -49,8 +49,8 @@ class DynamicClip(torch.nn.Module):
         super(DynamicClip, self).__init__()
 
     def forward(self, x, min_val=None, max_val=None):
-        min_val = min_val or float('-inf')
-        max_val = max_val or float('inf')
+        min_val = torch.tensor(float('-inf')) if min_val is None else torch.tensor(min_val)
+        max_val = torch.tensor(float('inf')) if max_val is None else torch.tensor(max_val)
         return torch.clamp(x, min_val, max_val)
 
 
