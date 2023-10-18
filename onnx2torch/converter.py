@@ -146,6 +146,9 @@ def convert(  # pylint: disable=too-many-locals, too-many-branches, too-many-sta
                 args.append(None)
 
             else:
+                value_type = onnx_graph.value_type(value_name)
+                if value_type not in [ValueType.GRAPH_INPUT, ValueType.NODE_OUTPUT, ValueType.GRAPH_INITIALIZER, ValueType.EMPTY]:
+                    print(f"Node {name} with value_name {value_name} has unexpected value type {value_type}")
                 raise RuntimeError(f'Got unexpected input value type ({value_type})')
 
         # Collect kwargs if there are some skipped args
