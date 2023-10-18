@@ -70,6 +70,47 @@ def _(node: OnnxNode, graph: OnnxGraph) -> OperationConverterResult:
     )
 
 
+
+class DynamicClip(torch.nn.Module):
+    def __init__(self):
+        super(DynamicClip, self).__init__()
+
+    def forward(self, x, min_val=None, max_val=None):
+        min_val = min_val or float('-inf')
+        max_val = max_val or float('inf')
+        return torch.clamp(x, min_val, max_val)
+
+
+@add_converter(operation_type='Clip', version=11)
+@add_converter(operation_type='Clip', version=12)
+@add_converter(operation_type='Clip', version=13)
+def _(node: OnnxNode, graph: OnnxGraph) -> OperationConverterResult:
+    min_name = node.input_values[1] if len(node.input_values) > 1 else None
+    max_name = node.input_values[2] if len(node.input_values) > 2 else None
+
+    min_val = None
+    max_val = None
+
+    try:
+        min_val = float(get_const_value(min_name, graph)) if min_name else None
+    except KeyError:
+        pass
+
+    try:
+        max_val = float(get_const_value(max_name, graph)) if max_name else None
+    except KeyError:
+        pass
+
+    torch_module = DynamicClip()
+
+    return OperationConverterResult(
+        torch_module=torch_module,
+        onnx_mapping=OnnxMapping(
+            inputs=(node.input_values[0], min_val, max_val),
+            outputs=node.output_values,
+        ),
+    )
+
 @add_converter(operation_type='Clip', version=6)
 def _(node: OnnxNode, graph: OnnxGraph) -> OperationConverterResult:  # pylint: disable=unused-argument
     node_attributes = node.attributes
